@@ -7,12 +7,12 @@
   --color-surface: #F7F5F3;
   --color-border: #E8E5E1;
   --color-text: #1C1917;
-  --color-text-muted: #959595;
-  --color-text-faint: #b5b5b5;
+  --color-text-muted: #b4b4b4;
+  --color-text-faint: #cecece;
 
-  --color-primary: #cdcdcd;
+  --color-primary: #8c8c8c;
   /* abu-abu — identitas "Pusaka" */
-  --color-primary-dark: #9a9a9a;
+  --color-primary-dark: #606060;
   --color-primary-soft: #EFEFEF;
 
   --color-hadir: #1F7A4D;
@@ -41,6 +41,33 @@
 
 * {
   box-sizing: border-box;
+}
+
+/* ===========================================================
+   WEBKIT SCROLLBAR (Chrome, Safari, Edge, Opera)
+   =========================================================== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-faint);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
 }
 
 html,
@@ -216,7 +243,6 @@ h3 {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
