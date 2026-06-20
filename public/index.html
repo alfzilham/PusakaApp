@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Pusaka — Daftar Hadir Reuni</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
+
+<!-- SheetJS for Excel import/export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- jsPDF for PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ============ ONBOARDING (pilih kategori) ============ -->
+<div class="onboarding" id="onboarding">
+  <div class="onboarding-content">
+    <span class="brand-seal onboarding-seal">P</span>
+    <h1>Pusaka</h1>
+    <p>Pilih kategori untuk melanjutkan</p>
+
+    <div class="onboarding-options">
+      <button class="onboarding-card" id="pickLakiBtn">
+        <i class="bi bi-person"></i>
+        <span>Laki-laki</span>
+      </button>
+      <button class="onboarding-card" id="pickPerempuanBtn">
+        <i class="bi bi-person-dress"></i>
+        <span>Perempuan</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP SHELL ============ -->
+<div class="app-shell hidden" id="appShell">
+
+<!-- ============ TOP BAR ============ -->
+<header class="topbar">
+  <button class="icon-btn" id="menuBtn" aria-label="Buka menu">
+    <i class="bi bi-list"></i>
+  </button>
+
+  <div class="brand">
+    <span class="brand-seal">P</span>
+    <span class="brand-name">Pusaka</span>
+    <span class="category-badge" id="categoryBadge">Laki-laki</span>
+  </div>
+
+  <button class="icon-btn" id="searchToggleBtn" aria-label="Cari nama">
+    <i class="bi bi-search"></i>
+  </button>
+</header>
+
+<!-- ============ SEARCH BAR (collapsible) ============ -->
+<div class="search-bar" id="searchBar">
+  <i class="bi bi-search search-icon"></i>
+  <input type="text" id="searchInput" placeholder="Cari nama peserta…" autocomplete="off" />
+  <button class="search-clear" id="searchClearBtn" aria-label="Bersihkan pencarian">
+    <i class="bi bi-x-circle-fill"></i>
+  </button>
+</div>
+
+<!-- ============ SIDEBAR OVERLAY ============ -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ============ SIDEBAR ============ -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="brand">
+      <span class="brand-seal">P</span>
+      <span class="brand-name">Pusaka</span>
+    </div>
+    <button class="icon-btn" id="sidebarCloseBtn" aria-label="Tutup menu">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
+  <div class="sidebar-section">
+    <p class="sidebar-label">Kategori</p>
+    <button class="sidebar-link" id="switchCategoryBtn">
+      <i class="bi bi-arrow-left-right"></i> Ganti Kategori
+    </button>
+  </div>
+
+  <div class="sidebar-section">
+    <p class="sidebar-label">Navigasi</p>
+    <button class="sidebar-link active" data-view="home">
+      <i class="bi bi-house-door"></i> Beranda
+    </button>
+    <button class="sidebar-link" data-view="hadir">
+      <i class="bi bi-check-circle"></i> Daftar Hadir
+    </button>
+    <button class="sidebar-link" data-view="tidak-hadir">
+      <i class="bi bi-x-circle"></i> Daftar Tidak Hadir
+    </button>
+    <button class="sidebar-link" data-view="belum-isi">
+      <i class="bi bi-clock-history"></i> Belum Mengisi
+    </button>
+  </div>
+
+  <div class="sidebar-section">
+    <p class="sidebar-label">Data</p>
+    <button class="sidebar-link" id="importExcelBtn">
+      <i class="bi bi-file-earmark-arrow-up"></i> Import Excel
+    </button>
+    <button class="sidebar-link" id="downloadMenuBtn">
+      <i class="bi bi-download"></i> Unduh Laporan
+    </button>
+    <button class="sidebar-link danger" id="resetDataBtn">
+      <i class="bi bi-trash3"></i> Hapus Semua Data
+    </button>
+  </div>
+
+  <input type="file" id="excelFileInput" accept=".xlsx,.xls" hidden />
+</nav>
+
+<!-- ============ MAIN CONTENT ============ -->
+<main class="main" id="main">
+
+  <!-- ===== HOME VIEW ===== -->
+  <section class="view" id="view-home">
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <span class="stat-number" id="statTotal">0</span>
+        <span class="stat-label">Total Peserta</span>
+      </div>
+      <div class="stat-card stat-hadir">
+        <span class="stat-number" id="statHadir">0</span>
+        <span class="stat-label">Hadir</span>
+      </div>
+      <div class="stat-card stat-tidak">
+        <span class="stat-number" id="statTidakHadir">0</span>
+        <span class="stat-label">Tidak Hadir</span>
+      </div>
+      <div class="stat-card stat-belum">
+        <span class="stat-number" id="statBelum">0</span>
+        <span class="stat-label">Belum Isi</span>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <h2>Semua Peserta</h2>
+    </div>
+
+    <div class="empty-state" id="emptyState">
+      <i class="bi bi-people"></i>
+      <p>Belum ada data peserta.</p>
+      <button class="btn-primary" id="emptyImportBtn">
+        <i class="bi bi-file-earmark-arrow-up"></i> Import Excel
+      </button>
+    </div>
+
+    <div class="list" id="participantList"></div>
+  </section>
+
+  <!-- ===== HADIR VIEW ===== -->
+  <section class="view hidden" id="view-hadir">
+    <div class="section-head">
+      <h2>Daftar Hadir</h2>
+      <span class="count-badge" id="hadirCount">0</span>
+    </div>
+    <div class="empty-state hidden" id="emptyHadir">
+      <i class="bi bi-check-circle"></i>
+      <p>Belum ada yang mengonfirmasi hadir.</p>
+    </div>
+    <div class="list" id="hadirList"></div>
+  </section>
+
+  <!-- ===== TIDAK HADIR VIEW ===== -->
+  <section class="view hidden" id="view-tidak-hadir">
+    <div class="section-head">
+      <h2>Daftar Tidak Hadir</h2>
+      <span class="count-badge" id="tidakHadirCount">0</span>
+    </div>
+    <div class="empty-state hidden" id="emptyTidakHadir">
+      <i class="bi bi-x-circle"></i>
+      <p>Belum ada yang menyatakan tidak hadir.</p>
+    </div>
+    <div class="list" id="tidakHadirList"></div>
+  </section>
+
+  <!-- ===== BELUM ISI VIEW ===== -->
+  <section class="view hidden" id="view-belum-isi">
+    <div class="section-head">
+      <h2>Belum Mengisi</h2>
+      <span class="count-badge" id="belumCount">0</span>
+    </div>
+    <div class="empty-state hidden" id="emptyBelum">
+      <i class="bi bi-clock-history"></i>
+      <p>Semua peserta sudah mengisi presensi.</p>
+    </div>
+    <div class="list" id="belumList"></div>
+  </section>
+
+</main>
+
+<!-- ============ FORM MODAL (Isi Kehadiran) ============ -->
+<div class="modal-overlay" id="formModalOverlay">
+  <div class="modal" id="formModal">
+    <div class="modal-header">
+      <h3>Konfirmasi Kehadiran</h3>
+      <button class="icon-btn" id="formCloseBtn" aria-label="Tutup">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <p class="modal-name" id="formParticipantName">—</p>
+
+      <div class="choice-group">
+        <button class="choice-btn choice-hadir" data-status="hadir">
+          <i class="bi bi-check-circle"></i>
+          <span>Hadir</span>
+        </button>
+        <button class="choice-btn choice-tidak" data-status="tidak-hadir">
+          <i class="bi bi-x-circle"></i>
+          <span>Tidak Hadir</span>
+        </button>
+      </div>
+
+      <div class="reason-field hidden" id="reasonField">
+        <label for="reasonInput">Alasan tidak hadir</label>
+        <textarea id="reasonInput" rows="3" placeholder="Contoh: berhalangan karena ada acara keluarga…"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" id="formCancelBtn">Batal</button>
+      <button class="btn-primary" id="formSaveBtn" disabled>Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DOWNLOAD MODAL ============ -->
+<div class="modal-overlay" id="downloadModalOverlay">
+  <div class="modal modal-sheet" id="downloadModal">
+    <div class="modal-header">
+      <h3>Unduh Laporan</h3>
+      <button class="icon-btn" id="downloadCloseBtn" aria-label="Tutup">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <button class="download-option" data-format="xlsx">
+        <i class="bi bi-file-earmark-spreadsheet"></i>
+        <div>
+          <span class="dl-title">Excel (.xlsx)</span>
+          <span class="dl-sub">Untuk diolah ulang atau dicetak</span>
+        </div>
+        <i class="bi bi-chevron-right dl-chevron"></i>
+      </button>
+      <button class="download-option" data-format="pdf">
+        <i class="bi bi-file-earmark-pdf"></i>
+        <div>
+          <span class="dl-title">PDF (.pdf)</span>
+          <span class="dl-sub">Untuk dibagikan atau dicetak</span>
+        </div>
+        <i class="bi bi-chevron-right dl-chevron"></i>
+      </button>
+      <button class="download-option" data-format="json">
+        <i class="bi bi-file-earmark-code"></i>
+        <div>
+          <span class="dl-title">JSON (.json)</span>
+          <span class="dl-sub">Untuk cadangan data mentah</span>
+        </div>
+        <i class="bi bi-chevron-right dl-chevron"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CONFIRM MODAL (generic) ============ -->
+<div class="modal-overlay" id="confirmModalOverlay">
+  <div class="modal modal-confirm" id="confirmModal">
+    <i class="bi bi-exclamation-triangle confirm-icon"></i>
+    <h3 id="confirmTitle">Hapus semua data?</h3>
+    <p id="confirmText">Tindakan ini tidak bisa dibatalkan.</p>
+    <div class="modal-footer">
+      <button class="btn-ghost" id="confirmCancelBtn">Batal</button>
+      <button class="btn-danger" id="confirmOkBtn">Hapus</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TOAST ============ -->
+<div class="toast" id="toast">
+  <i class="bi bi-check-circle-fill"></i>
+  <span id="toastMessage">Tersimpan</span>
+</div>
+
+<!-- ============ LOADING OVERLAY ============ -->
+<div class="loading-overlay hidden" id="loadingOverlay">
+  <div class="spinner"></div>
+  <p>Memuat data…</p>
+</div>
+
+</div><!-- /app-shell -->
+
+<script src="app.js"></script>
+</body>
+</html>

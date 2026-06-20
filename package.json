@@ -1,0 +1,12 @@
+{
+  "name": "pusakaapp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PusakaApp - Platform presensi reuni sekolah",
+  "engines": {
+    "node": "20.x"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.9.0"
+  }
+}
