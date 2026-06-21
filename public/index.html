@@ -238,6 +238,28 @@
             </button>
           </div>
 
+          <!-- Bukti Transfer (hanya untuk status Hadir) -->
+          <div class="bukti-field hidden" id="buktiField">
+            <label>Upload Bukti Transfer</label>
+            <div class="upload-area" id="uploadArea">
+              <i class="bi bi-camera"></i>
+              <span>Pilih foto bukti transfer</span>
+              <span class="upload-hint">Format JPG/PNG, max 4.5MB</span>
+            </div>
+            <input type="file" id="buktiInput" accept="image/jpeg,image/png,image/webp" hidden />
+            <div class="upload-preview hidden" id="uploadPreview">
+              <img id="previewImage" alt="Preview bukti transfer" />
+              <button class="icon-btn upload-remove" id="uploadRemoveBtn" aria-label="Hapus gambar" type="button">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+
+            <label class="checkbox-label">
+              <input type="checkbox" id="konfirmasiCheckbox" />
+              <span>Peserta memang benar sudah bayar</span>
+            </label>
+          </div>
+
           <div class="reason-field hidden" id="reasonField">
             <label for="reasonInput">Alasan tidak hadir</label>
             <textarea id="reasonInput" rows="3" placeholder="Contoh: berhalangan karena ada acara keluarga…"></textarea>

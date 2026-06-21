@@ -5,12 +5,14 @@
 -- atau lewat: psql "$DATABASE_URL" -f schema.sql
 
 CREATE TABLE IF NOT EXISTS participants (
-  id          TEXT PRIMARY KEY,
-  nama        TEXT NOT NULL,
-  kategori    TEXT NOT NULL CHECK (kategori IN ('laki-laki', 'perempuan')),
-  status      TEXT NOT NULL DEFAULT 'belum' CHECK (status IN ('belum', 'hadir', 'tidak-hadir')),
-  alasan      TEXT DEFAULT '',
-  updated_at  TIMESTAMPTZ
+  id                  TEXT PRIMARY KEY,
+  nama                TEXT NOT NULL,
+  kategori            TEXT NOT NULL CHECK (kategori IN ('laki-laki', 'perempuan')),
+  status              TEXT NOT NULL DEFAULT 'belum' CHECK (status IN ('belum', 'hadir', 'tidak-hadir')),
+  alasan              TEXT DEFAULT '',
+  bukti_transfer_url  TEXT DEFAULT '',
+  bukti_dikonfirmasi  BOOLEAN DEFAULT FALSE,
+  updated_at          TIMESTAMPTZ
 );
 
 -- Mencegah nama duplikat di kategori yang sama (case-insensitive)

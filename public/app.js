@@ -37,11 +37,22 @@ async function apiImport(entries) {
   return data;
 }
 
-async function apiUpdateAttendance(id, status, alasan) {
+async function apiUpload(participantId, imageBase64, mimeType) {
+  const res = await fetch('/api/upload', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ participantId, imageBase64, mimeType }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Gagal upload gambar (HTTP ${res.status}).`);
+  return data;
+}
+
+async function apiUpdateAttendance(id, status, alasan, buktiTransferUrl, buktiDikonfirmasi) {
   const res = await fetch('/api/attendance', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, status, alasan }),
+    body: JSON.stringify({ id, status, alasan, buktiTransferUrl, buktiDikonfirmasi }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Gagal menyimpan jawaban (HTTP ${res.status}).`);
@@ -104,6 +115,14 @@ const reasonInput = el('reasonInput');
 const formSaveBtn = el('formSaveBtn');
 const formCancelBtn = el('formCancelBtn');
 const formCloseBtn = el('formCloseBtn');
+
+const buktiField = el('buktiField');
+const uploadArea = el('uploadArea');
+const buktiInput = el('buktiInput');
+const uploadPreview = el('uploadPreview');
+const previewImage = el('previewImage');
+const uploadRemoveBtn = el('uploadRemoveBtn');
+const konfirmasiCheckbox = el('konfirmasiCheckbox');
 
 const downloadMenuBtn = el('downloadMenuBtn');
 const downloadModalOverlay = el('downloadModalOverlay');
@@ -331,6 +350,19 @@ excelFileInput.addEventListener('change', async (e) => {
 // -----------------------------------------------------------------
 // Form Modal (Isi Kehadiran)
 // -----------------------------------------------------------------
+let pendingBuktiBase64 = null;
+let pendingBuktiMime = null;
+
+function resetBuktiField() {
+  pendingBuktiBase64 = null;
+  pendingBuktiMime = null;
+  buktiInput.value = '';
+  uploadPreview.classList.add('hidden');
+  uploadArea.classList.remove('hidden');
+  previewImage.src = '';
+  konfirmasiCheckbox.checked = false;
+}
+
 function openFormModal(participantId) {
   activeParticipantId = participantId;
   const p = participants.find((x) => x.id === participantId);
@@ -339,6 +371,7 @@ function openFormModal(participantId) {
   pendingStatus = p.status === 'belum' ? null : p.status;
   formParticipantName.textContent = p.nama;
   reasonInput.value = p.alasan || '';
+  resetBuktiField();
 
   updateChoiceUI();
   formModalOverlay.classList.add('open');
@@ -348,6 +381,20 @@ function closeFormModal() {
   formModalOverlay.classList.remove('open');
   activeParticipantId = null;
   pendingStatus = null;
+  resetBuktiField();
+}
+
+function updateSubmitBtnState() {
+  if (!pendingStatus) {
+    formSaveBtn.disabled = true;
+    return;
+  }
+  if (pendingStatus === 'tidak-hadir') {
+    formSaveBtn.disabled = false;
+    return;
+  }
+  // Status hadir: harus ada gambar + checkbox
+  formSaveBtn.disabled = !(pendingBuktiBase64 && konfirmasiCheckbox.checked);
 }
 
 function updateChoiceUI() {
@@ -355,7 +402,9 @@ function updateChoiceUI() {
     btn.classList.toggle('selected', btn.dataset.status === pendingStatus);
   });
   reasonField.classList.toggle('hidden', pendingStatus !== 'tidak-hadir');
-  formSaveBtn.disabled = !pendingStatus;
+  buktiField.classList.toggle('hidden', pendingStatus !== 'hadir');
+  if (pendingStatus !== 'hadir') resetBuktiField();
+  updateSubmitBtnState();
 }
 
 document.querySelectorAll('.choice-btn').forEach((btn) => {
@@ -365,18 +414,100 @@ document.querySelectorAll('.choice-btn').forEach((btn) => {
   });
 });
 
+// --- Upload gambar dengan kompresi Canvas API ---
+uploadArea.addEventListener('click', () => buktiInput.click());
+
+buktiInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  try {
+    const result = await compressImage(file);
+    pendingBuktiBase64 = result.base64;
+    pendingBuktiMime = result.mimeType;
+    previewImage.src = `data:${result.mimeType};base64,${result.base64}`;
+    uploadArea.classList.add('hidden');
+    uploadPreview.classList.remove('hidden');
+    updateSubmitBtnState();
+  } catch (err) {
+    console.error('Pusaka: gagal kompres gambar', err);
+    showToast('Gagal membaca gambar. Coba file lain.', 'error');
+  }
+});
+
+uploadRemoveBtn.addEventListener('click', () => {
+  resetBuktiField();
+  updateSubmitBtnState();
+});
+
+konfirmasiCheckbox.addEventListener('change', updateSubmitBtnState);
+
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        // Resize maks 1200px di sisi terpanjang
+        let w = img.width;
+        let h = img.height;
+        const MAX = 1200;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const mimeType = file.type || 'image/jpeg';
+        const quality = 0.7;
+        const dataUrl = canvas.toDataURL(mimeType, quality);
+        const base64 = dataUrl.split(',')[1];
+
+        resolve({ base64, mimeType });
+      };
+      img.onerror = () => reject(new Error('Gagal membaca gambar'));
+      img.src = ev.target.result;
+    };
+    reader.onerror = () => reject(new Error('Gagal membaca file'));
+    reader.readAsDataURL(file);
+  });
+}
+
 formSaveBtn.addEventListener('click', async () => {
   const p = participants.find((x) => x.id === activeParticipantId);
   if (!p || !pendingStatus) return;
 
-  const alasanToSave = pendingStatus === 'tidak-hadir' ? reasonInput.value.trim() : '';
-
   setLoading(true);
   try {
-    const updated = await apiUpdateAttendance(p.id, pendingStatus, alasanToSave);
+    let buktiTransferUrl = '';
+
+    if (pendingStatus === 'hadir') {
+      // Upload gambar dulu ke Vercel Blob
+      const uploadResult = await apiUpload(p.id, pendingBuktiBase64, pendingBuktiMime);
+      buktiTransferUrl = uploadResult.url;
+    }
+
+    const alasanToSave = pendingStatus === 'tidak-hadir' ? reasonInput.value.trim() : '';
+
+    const updated = await apiUpdateAttendance(
+      p.id,
+      pendingStatus,
+      alasanToSave,
+      buktiTransferUrl,
+      pendingStatus === 'hadir'
+    );
+
     p.status = updated.status;
     p.alasan = updated.alasan;
     p.updatedAt = updated.updatedAt;
+    p.buktiTransferUrl = updated.buktiTransferUrl;
+    p.buktiDikonfirmasi = updated.buktiDikonfirmasi;
+
     closeFormModal();
     render();
     showToast('Jawaban tersimpan');
@@ -432,9 +563,10 @@ function downloadXlsx() {
     Nama: p.nama,
     Status: statusLabel(p.status),
     Alasan: p.alasan || '',
+    'Bukti Transfer': p.buktiTransferUrl || '',
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 16 }, { wch: 40 }];
+  ws['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 16 }, { wch: 40 }, { wch: 60 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, `Presensi ${categoryLabel(currentCategory)}`);
   XLSX.writeFile(wb, `Pusaka-${categoryLabel(currentCategory)}-${dateStamp()}.xlsx`);
@@ -459,15 +591,16 @@ function downloadPdf() {
     p.nama,
     statusLabel(p.status),
     p.alasan || '-',
+    p.buktiTransferUrl || '-',
   ]);
 
   doc.autoTable({
-    head: [['No', 'Nama', 'Status', 'Alasan']],
+    head: [['No', 'Nama', 'Status', 'Alasan', 'Bukti Transfer']],
     body: rows,
     startY: 32,
     headStyles: { fillColor: [140, 140, 140] },
-    styles: { fontSize: 9 },
-    columnStyles: { 0: { cellWidth: 10 }, 2: { cellWidth: 28 } },
+    styles: { fontSize: 8 },
+    columnStyles: { 0: { cellWidth: 10 }, 2: { cellWidth: 22 }, 4: { cellWidth: 50 } },
   });
 
   doc.save(`Pusaka-${categoryLabel(currentCategory)}-${dateStamp()}.pdf`);
@@ -479,7 +612,10 @@ function downloadJson() {
     kategori: categoryLabel(currentCategory),
     exportedAt: new Date().toISOString(),
     total: participants.length,
-    participants: getSortedParticipants(),
+    participants: getSortedParticipants().map((p) => ({
+      ...p,
+      statusLabel: statusLabel(p.status),
+    })),
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -558,11 +694,16 @@ function renderCard(p) {
     ? `<span class="p-reason">${escapeHtml(p.alasan)}</span>`
     : '';
 
+  const buktiHtml = p.status === 'hadir' && p.buktiTransferUrl
+    ? `<span class="p-bukti"><i class="bi bi-image"></i> Bukti transfer</span>`
+    : '';
+
   card.innerHTML = `
     <span class="avatar-initial">${initials(p.nama)}</span>
     <span class="p-info">
       <span class="p-name">${escapeHtml(p.nama)}</span>
       ${reasonHtml}
+      ${buktiHtml}
     </span>
     ${pill}
     <i class="bi bi-chevron-right p-chevron"></i>

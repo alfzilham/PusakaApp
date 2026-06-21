@@ -14,7 +14,7 @@ module.exports = async (req, res) => {
   try {
     if (req.method === 'GET') {
       const rows = await sql`
-        SELECT id, nama, status, alasan, updated_at AS "updatedAt"
+        SELECT id, nama, status, alasan, bukti_transfer_url AS "buktiTransferUrl", bukti_dikonfirmasi AS "buktiDikonfirmasi", updated_at AS "updatedAt"
         FROM participants
         WHERE kategori = ${kategori}
         ORDER BY nama ASC
@@ -23,7 +23,23 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'DELETE') {
+      // Kumpulkan semua URL blob sebelum hapus data
+      const toDelete = await sql`
+        SELECT bukti_transfer_url FROM participants
+        WHERE kategori = ${kategori} AND bukti_transfer_url != ''
+      `;
+
       await sql`DELETE FROM participants WHERE kategori = ${kategori}`;
+
+      // Hapus semua blob dari Vercel Blob
+      if (toDelete.length > 0) {
+        try {
+          const { del } = await import('@vercel/blob');
+          const urls = toDelete.map((r) => r.bukti_transfer_url);
+          await del(urls);
+        } catch (_) { /* non-fatal */ }
+      }
+
       return res.status(200).json({ ok: true });
     }
 
