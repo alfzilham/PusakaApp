@@ -139,7 +139,7 @@ const confirmOkBtn = el('confirmOkBtn');
 // Onboarding / Category selection
 // -----------------------------------------------------------------
 function categoryLabel(cat) {
-  return cat === 'laki-laki' ? 'Laki-laki' : 'Perempuan';
+  return cat === 'laki-laki' ? 'Cowok' : 'Cewek';
 }
 
 async function enterCategory(category) {
