@@ -34,7 +34,7 @@ module.exports = async (req, res) => {
     const blob = await put(`bukti/${participantId}.${ext}`, buffer, {
       access: 'public',
       contentType: mimeType || 'image/jpeg',
-      addRandomSuffix: false,
+
     });
 
     // Hapus gambar lama dari Blob kalau ada
