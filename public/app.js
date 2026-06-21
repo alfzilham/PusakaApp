@@ -612,7 +612,7 @@ function downloadPdf() {
     headStyles: { fillColor: [140, 140, 140] },
     styles: { fontSize: 8 },
     columnStyles: { 0: { cellWidth: 10 }, 2: { cellWidth: 22 }, 4: { cellWidth: 50 } },
-    didParseCell: function (data) {
+    didDrawCell: function (data) {
       if (data.column.index === 4 && data.cell.raw && data.cell.raw !== '-') {
         doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, {
           url: data.cell.raw,
