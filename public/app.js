@@ -566,6 +566,17 @@ function downloadXlsx() {
     'Bukti Transfer': p.buktiTransferUrl || '',
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
+
+  // Jadikan kolom Bukti Transfer sebagai hyperlink
+  for (let i = 0; i < rows.length; i++) {
+    const cellRef = XLSX.utils.encode_cell({ r: i + 1, c: 4 });
+    const cell = ws[cellRef];
+    if (cell && cell.v && cell.v !== '-') {
+      cell.l = { Target: cell.v, Tooltip: 'Klik untuk lihat bukti transfer' };
+      cell.s = { font: { color: { rgb: '0563C1' }, underline: true } };
+    }
+  }
+
   ws['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 16 }, { wch: 40 }, { wch: 60 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, `Presensi ${categoryLabel(currentCategory)}`);
@@ -601,6 +612,13 @@ function downloadPdf() {
     headStyles: { fillColor: [140, 140, 140] },
     styles: { fontSize: 8 },
     columnStyles: { 0: { cellWidth: 10 }, 2: { cellWidth: 22 }, 4: { cellWidth: 50 } },
+    didParseCell: function (data) {
+      if (data.column.index === 4 && data.cell.raw && data.cell.raw !== '-') {
+        doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, {
+          url: data.cell.raw,
+        });
+      }
+    },
   });
 
   doc.save(`Pusaka-${categoryLabel(currentCategory)}-${dateStamp()}.pdf`);
