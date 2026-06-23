@@ -482,6 +482,12 @@ formSaveBtn.addEventListener('click', async () => {
   const p = participants.find((x) => x.id === activeParticipantId);
   if (!p || !pendingStatus) return;
 
+  // Guard anti-bypass: validasi ulang di click handler
+  if (pendingStatus === 'hadir' && (!pendingBuktiBase64 || !konfirmasiCheckbox.checked)) {
+    showToast('Upload bukti transfer dan centang konfirmasi terlebih dahulu.', 'error');
+    return;
+  }
+
   setLoading(true);
   try {
     let buktiTransferUrl = '';
