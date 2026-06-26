@@ -16,6 +16,11 @@ let searchQuery = '';
 let activeParticipantId = null; // untuk form modal
 let pendingStatus = null;       // pilihan sementara di form modal
 
+// Deadline pendaftaran: 27 Juni 2026 jam 00:00 WIB
+const DEADLINE = new Date('2026-06-26T17:00:00.000Z'); // UTC = 00:00 WIB+1
+function isPastDeadline() { return Date.now() >= DEADLINE.getTime(); }
+function formatDeadline(n) { return String(Math.floor(n)).padStart(2, '0'); }
+
 // -----------------------------------------------------------------
 // API helpers (Vercel Serverless Functions + Neon Postgres)
 // -----------------------------------------------------------------
@@ -103,6 +108,9 @@ const searchClearBtn = el('searchClearBtn');
 const loadingOverlay = el('loadingOverlay');
 const toast = el('toast');
 const toastMessage = el('toastMessage');
+
+const countdownBanner = el('countdownBanner');
+const countdownText = el('countdownText');
 
 const excelFileInput = el('excelFileInput');
 const importExcelBtn = el('importExcelBtn');
@@ -364,6 +372,10 @@ function resetBuktiField() {
 }
 
 function openFormModal(participantId) {
+  if (isPastDeadline()) {
+    showToast('Pendaftaran telah ditutup. Tidak bisa mengubah data.', 'error');
+    return;
+  }
   activeParticipantId = participantId;
   const p = participants.find((x) => x.id === participantId);
   if (!p) return;
@@ -481,6 +493,12 @@ function compressImage(file) {
 formSaveBtn.addEventListener('click', async () => {
   const p = participants.find((x) => x.id === activeParticipantId);
   if (!p || !pendingStatus) return;
+
+  // Guard deadline: cegah submit kalau sudah lewat
+  if (isPastDeadline()) {
+    showToast('Pendaftaran telah ditutup. Tidak bisa mengubah data.', 'error');
+    return;
+  }
 
   // Guard anti-bypass: validasi ulang di click handler
   if (pendingStatus === 'hadir' && (!pendingBuktiBase64 || !konfirmasiCheckbox.checked)) {
@@ -798,3 +816,26 @@ function init() {
 }
 
 init();
+
+// -----------------------------------------------------------------
+// Countdown deadline
+// -----------------------------------------------------------------
+function updateCountdown() {
+  const remaining = DEADLINE.getTime() - Date.now();
+
+  if (remaining <= 0) {
+    countdownBanner.classList.add('expired');
+    countdownText.textContent = 'Pendaftaran telah ditutup.';
+    return;
+  }
+
+  const hrs = remaining / 3600000;
+  const h = Math.floor(hrs);
+  const m = Math.floor((hrs - h) * 60);
+  const s = Math.floor(((hrs - h) * 60 - m) * 60);
+
+  countdownText.textContent = `Pendaftaran ditutup dalam ${formatDeadline(h)}:${formatDeadline(m)}:${formatDeadline(s)}`;
+}
+
+updateCountdown();
+setInterval(updateCountdown, 1000);

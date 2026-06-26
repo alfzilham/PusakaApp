@@ -199,6 +199,32 @@ h3 {
 }
 
 /* ===========================================================
+   COUNTDOWN BANNER
+   =========================================================== */
+.countdown-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #fff3cd;
+  color: #856404;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-bottom: 1px solid #ffeeba;
+}
+
+.countdown-banner i {
+  font-size: 0.9rem;
+}
+
+.countdown-banner.expired {
+  background: #f8d7da;
+  color: #721c24;
+  border-bottom: 1px solid #f5c6cb;
+}
+
+/* ===========================================================
    TOP BAR
    =========================================================== */
 .topbar {

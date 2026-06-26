@@ -29,6 +29,12 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // Cek deadline: pendaftaran ditutup 27 Juni 2026 jam 00:00 WIB
+    const expired = await sql`SELECT NOW() AT TIME ZONE 'Asia/Jakarta' >= '2026-06-27 00:00:00' AS expired`;
+    if (expired[0]?.expired) {
+      return res.status(403).json({ error: 'Pendaftaran telah ditutup.' });
+    }
+
     // Ambil data lama untuk cek apakah perlu hapus blob
     const old = await sql`
       SELECT bukti_transfer_url FROM participants WHERE id = ${id}
