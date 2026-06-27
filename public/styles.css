@@ -664,7 +664,9 @@ h3 {
   font-size: 0.92rem;
   padding: 13px 20px;
   border-radius: var(--radius-sm);
-  color: var(--color-text-muted);
+  color: #000000;
+  border: 1.5px solid var(--color-border);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
 .btn-ghost:active {
