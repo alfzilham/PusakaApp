@@ -23,6 +23,15 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'DELETE') {
+      // Validasi password dari environment variable
+      const { password, alasan } = req.body || {};
+      if (!process.env.DELETE_PASSWORD || password !== process.env.DELETE_PASSWORD) {
+        return res.status(403).json({ error: 'Password salah.' });
+      }
+      if (!alasan || alasan.trim().length < 3) {
+        return res.status(400).json({ error: 'Alasan penghapusan wajib diisi (minimal 3 karakter).' });
+      }
+
       // Kumpulkan semua URL blob sebelum hapus data
       const toDelete = await sql`
         SELECT bukti_transfer_url FROM participants

@@ -73,6 +73,17 @@ async function apiDeleteCategory(kategori) {
   return true;
 }
 
+async function apiVerifyPassword(password) {
+  const res = await fetch('/api/verify-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Password salah.');
+  return true;
+}
+
 async function loadParticipants() {
   try {
     participants = await apiGetParticipants(currentCategory);
@@ -142,6 +153,11 @@ const confirmTitle = el('confirmTitle');
 const confirmText = el('confirmText');
 const confirmCancelBtn = el('confirmCancelBtn');
 const confirmOkBtn = el('confirmOkBtn');
+const sadarCheckbox = el('sadarCheckbox');
+const deletePasswordInput = el('deletePasswordInput');
+const deleteAlasanInput = el('deleteAlasanInput');
+const konfirmasiHapusCheckbox = el('konfirmasiHapusCheckbox');
+const passwordError = el('passwordError');
 
 // -----------------------------------------------------------------
 // Onboarding / Category selection
@@ -679,31 +695,120 @@ function dateStamp() {
 // -----------------------------------------------------------------
 // Reset Data
 // -----------------------------------------------------------------
+let deleteStep = 0;
+let deletePasswordVerified = false;
+
+function resetDeleteModal() {
+  deleteStep = 0;
+  deletePasswordVerified = false;
+  sadarCheckbox.checked = false;
+  deletePasswordInput.value = '';
+  deleteAlasanInput.value = '';
+  konfirmasiHapusCheckbox.checked = false;
+  passwordError.classList.add('hidden');
+  confirmOkBtn.disabled = true;
+  document.querySelectorAll('.confirm-step').forEach((s) => s.classList.add('hidden'));
+  el('confirm-step0')?.classList.remove('hidden');
+}
+
+function showDeleteStep(step) {
+  document.querySelectorAll('.confirm-step').forEach((s) => s.classList.add('hidden'));
+  const s = document.querySelector(`.confirm-step[data-step="${step}"]`);
+  if (s) s.classList.remove('hidden');
+}
+
+function updateDeleteProgress() {
+  const step0ok = sadarCheckbox.checked;
+  const step1ok = deletePasswordVerified;
+  const step2ok = deleteAlasanInput.value.trim().length >= 3;
+  const step3ok = konfirmasiHapusCheckbox.checked;
+
+  if (!step0ok) {
+    if (deleteStep > 0) { deleteStep = 0; showDeleteStep(0); }
+  } else if (deleteStep < 1) {
+    deleteStep = 1; showDeleteStep(1); deletePasswordInput.focus();
+  }
+
+  if (deleteStep >= 1 && !step1ok) { /* nunggu password */ }
+  else if (deleteStep >= 1 && step1ok && deleteStep < 2) {
+    deleteStep = 2; showDeleteStep(2); deleteAlasanInput.focus();
+  }
+
+  if (deleteStep >= 2 && step2ok && deleteStep < 3) {
+    deleteStep = 3; showDeleteStep(3);
+  }
+
+  if (deleteStep >= 3 && step3ok) {
+    confirmOkBtn.disabled = false;
+  } else {
+    confirmOkBtn.disabled = true;
+  }
+}
+
 resetDataBtn.addEventListener('click', () => {
   closeSidebar();
   confirmTitle.textContent = `Hapus data ${categoryLabel(currentCategory).toLowerCase()}?`;
   confirmText.textContent = `Seluruh daftar peserta dan jawaban presensi kategori ${categoryLabel(currentCategory).toLowerCase()} akan dihapus permanen untuk semua orang. Tindakan ini tidak bisa dibatalkan.`;
+  resetDeleteModal();
   confirmModalOverlay.classList.add('open');
 });
 
-confirmCancelBtn.addEventListener('click', () => confirmModalOverlay.classList.remove('open'));
+sadarCheckbox.addEventListener('change', updateDeleteProgress);
+
+deletePasswordInput.addEventListener('input', async () => {
+  const pwd = deletePasswordInput.value.trim();
+  if (!pwd) {
+    deletePasswordVerified = false;
+    passwordError.classList.add('hidden');
+    updateDeleteProgress();
+    return;
+  }
+
+  try {
+    await apiVerifyPassword(pwd);
+    deletePasswordVerified = true;
+    passwordError.classList.add('hidden');
+  } catch (_) {
+    deletePasswordVerified = false;
+    passwordError.classList.remove('hidden');
+  }
+  updateDeleteProgress();
+});
+
+deleteAlasanInput.addEventListener('input', updateDeleteProgress);
+konfirmasiHapusCheckbox.addEventListener('change', updateDeleteProgress);
+
+confirmCancelBtn.addEventListener('click', () => {
+  confirmModalOverlay.classList.remove('open');
+});
+
 confirmModalOverlay.addEventListener('click', (e) => {
   if (e.target === confirmModalOverlay) confirmModalOverlay.classList.remove('open');
 });
 
 confirmOkBtn.addEventListener('click', async () => {
+  const password = deletePasswordInput.value.trim();
+  const alasan = deleteAlasanInput.value.trim();
+
   setLoading(true);
   try {
-    await apiDeleteCategory(currentCategory);
+    const res = await fetch(`/api/participants?kategori=${encodeURIComponent(currentCategory)}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password, alasan }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `Gagal menghapus data (HTTP ${res.status}).`);
+
     participants = [];
     render();
+    confirmModalOverlay.classList.remove('open');
     showToast(`Data ${categoryLabel(currentCategory).toLowerCase()} telah dihapus`);
   } catch (err) {
     console.error('Pusaka: gagal menghapus data', err);
     showToast(err.message || 'Gagal menghapus data di server.', 'error');
   } finally {
     setLoading(false);
-    confirmModalOverlay.classList.remove('open');
   }
 });
 

@@ -317,15 +317,47 @@
       </div>
     </div>
 
-    <!-- ============ CONFIRM MODAL (generic) ============ -->
+    <!-- ============ CONFIRM MODAL (Hapus Data) ============ -->
     <div class="modal-overlay" id="confirmModalOverlay">
       <div class="modal modal-confirm" id="confirmModal">
         <i class="bi bi-exclamation-triangle confirm-icon"></i>
         <h3 id="confirmTitle">Hapus semua data?</h3>
         <p id="confirmText">Tindakan ini tidak bisa dibatalkan.</p>
+
+        <div class="confirm-body">
+          <!-- Step 0: Checkbox sadar -->
+          <div class="confirm-step" data-step="0" id="confirm-step0">
+            <label class="checkbox-label">
+              <input type="checkbox" id="sadarCheckbox" />
+              <span>Saya sadar akan menghapus seluruh data</span>
+            </label>
+          </div>
+
+          <!-- Step 1: Input password -->
+          <div class="confirm-step hidden" data-step="1">
+            <label for="deletePasswordInput">Password</label>
+            <input type="password" id="deletePasswordInput" class="confirm-input" placeholder="Masukkan password" autocomplete="off" />
+            <span class="confirm-error hidden" id="passwordError">Password salah.</span>
+          </div>
+
+          <!-- Step 2: Alasan penghapusan -->
+          <div class="confirm-step hidden" data-step="2">
+            <label for="deleteAlasanInput">Alasan penghapusan</label>
+            <textarea id="deleteAlasanInput" class="confirm-textarea" rows="3" placeholder="Tuliskan alasan mengapa data dihapus…"></textarea>
+          </div>
+
+          <!-- Step 3: Checkbox konfirmasi akhir -->
+          <div class="confirm-step hidden" data-step="3">
+            <label class="checkbox-label">
+              <input type="checkbox" id="konfirmasiHapusCheckbox" />
+              <span>Konfirmasi penghapusan data</span>
+            </label>
+          </div>
+        </div>
+
         <div class="modal-footer">
           <button class="btn-ghost" id="confirmCancelBtn">Batal</button>
-          <button class="btn-danger" id="confirmOkBtn">Hapus</button>
+          <button class="btn-danger" id="confirmOkBtn" disabled>Hapus</button>
         </div>
       </div>
     </div>

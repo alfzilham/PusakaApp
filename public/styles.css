@@ -1031,6 +1031,60 @@ h3 {
   padding-top: 20px;
 }
 
+/* confirm modal — progressive disclosure steps */
+.confirm-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 16px;
+  text-align: left;
+}
+
+.confirm-step {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.confirm-step .checkbox-label {
+  margin-top: 0;
+}
+
+.confirm-input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.92rem;
+  outline: none;
+  color: var(--color-text);
+}
+
+.confirm-input:focus {
+  border-color: var(--color-primary);
+}
+
+.confirm-textarea {
+  width: 100%;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 11px 12px;
+  font-size: 0.92rem;
+  resize: vertical;
+  outline: none;
+  color: var(--color-text);
+}
+
+.confirm-textarea:focus {
+  border-color: var(--color-primary);
+}
+
+.confirm-error {
+  font-size: 0.8rem;
+  color: var(--color-tidak);
+  font-weight: 600;
+}
+
 /* ===========================================================
    TOAST
    =========================================================== */
