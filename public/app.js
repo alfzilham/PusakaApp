@@ -829,12 +829,13 @@ function updateCountdown() {
     return;
   }
 
-  const hrs = remaining / 3600000;
-  const h = Math.floor(hrs);
-  const m = Math.floor((hrs - h) * 60);
-  const s = Math.floor(((hrs - h) * 60 - m) * 60);
+    const totalSec = Math.floor(remaining / 1000);
+    const d = Math.floor(totalSec / 86400);
+    const h = Math.floor((totalSec % 86400) / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
 
-  countdownText.textContent = `Pendaftaran ditutup dalam ${formatDeadline(h)}:${formatDeadline(m)}:${formatDeadline(s)}`;
+    countdownText.textContent = `Pendaftaran ditutup dalam ${d}:${formatDeadline(h)}:${formatDeadline(m)}:${formatDeadline(s)}`;
 }
 
 updateCountdown();
