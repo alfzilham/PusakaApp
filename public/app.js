@@ -17,7 +17,7 @@ let activeParticipantId = null; // untuk form modal
 let pendingStatus = null;       // pilihan sementara di form modal
 
 // Deadline pendaftaran: 27 Juni 2026 jam 00:00 WIB
-const DEADLINE = new Date('2026-06-28T17:00:00.000Z'); // UTC = 29 Juni 00:00 WIB
+const DEADLINE = new Date('2026-06-29T17:00:00.000Z'); // UTC = 30 Juni 00:00 WIB
 function isPastDeadline() { return Date.now() >= DEADLINE.getTime(); }
 function formatDeadline(n) { return String(Math.floor(n)).padStart(2, '0'); }
 
